@@ -228,7 +228,7 @@ private struct VibeRadarPentagonView: View {
             ZStack {
                 Canvas { context, _ in
                     // Concentric pentagons (25%, 50%, 75%, 100%)
-                    for ring in [0.25, 0.5, 0.75, 1.0] {
+                    for ring in [CGFloat(0.25), CGFloat(0.5), CGFloat(0.75), CGFloat(1.0)] {
                         var path = Path()
                         for i in 0..<5 {
                             let angle = (-90.0 + Double(i) * 72.0) * .pi / 180.0
@@ -246,7 +246,7 @@ private struct VibeRadarPentagonView: View {
                     var dataPath = Path()
                     for (i, m) in metrics.enumerated() {
                         let angle = (-90.0 + Double(i) * 72.0) * .pi / 180.0
-                        let r = radius * CGFloat(max(0.08, m.value / 100.0))
+                        let r = radius * CGFloat(max(Float(0.08), m.value / 100.0))
                         let pt = CGPoint(x: center.x + CGFloat(cos(angle)) * r, y: center.y + CGFloat(sin(angle)) * r)
                         if i == 0 { dataPath.move(to: pt) } else { dataPath.addLine(to: pt) }
                     }

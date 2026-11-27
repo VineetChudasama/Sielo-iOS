@@ -27,6 +27,7 @@ jobs:
 
       - name: Build Unsigned iOS App
         run: |
+          set -o pipefail
           xcodebuild \
             -project Sielo.xcodeproj \
             -scheme Sielo \
@@ -36,7 +37,11 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            build
+            build 2>&1 | tee build.log || {
+              echo "=== COMPILER ERRORS ==="
+              grep -E "error:|fatal error:" build.log | head -n 40
+              exit 1
+            }
 
       - name: Package Unsigned IPA
         run: |

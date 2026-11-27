@@ -1,5 +1,6 @@
 import Foundation
 import AVFoundation
+import Combine
 
 /// Mirrors core-audio/AudioEffectsManager.kt using AVAudioUnitEQ presets & bass shelf.
 @MainActor
