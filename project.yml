@@ -1,0 +1,85 @@
+name: Sielo
+options:
+  bundleIdPrefix: com.sielo.music
+  deploymentTarget:
+    iOS: "16.0"
+  xcodeVersion: "15.4"
+  createIntermediateGroups: true
+
+packages:
+  SieloCoreModels:
+    path: Packages/SieloCoreModels
+  SieloCoreDatabase:
+    path: Packages/SieloCoreDatabase
+  SieloCoreNetwork:
+    path: Packages/SieloCoreNetwork
+  SieloCoreAudio:
+    path: Packages/SieloCoreAudio
+  SieloCoreLyrics:
+    path: Packages/SieloCoreLyrics
+  SieloCoreRecommendations:
+    path: Packages/SieloCoreRecommendations
+  SieloCorePlaylistImport:
+    path: Packages/SieloCorePlaylistImport
+  Firebase:
+    url: https://github.com/firebase/firebase-ios-sdk
+    from: 11.0.0
+  GoogleSignIn:
+    url: https://github.com/google/GoogleSignIn-iOS
+    from: 8.0.0
+  GRDB:
+    url: https://github.com/groue/GRDB.swift
+    from: 6.29.0
+  CocoaMQTT:
+    url: https://github.com/emqx/CocoaMQTT
+    from: 2.1.8
+  Nuke:
+    url: https://github.com/kean/Nuke
+    from: 12.8.0
+
+targets:
+  Sielo:
+    type: application
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: SieloApp
+        excludes:
+          - "Info.plist"
+          - "Sielo.entitlements"
+    resources:
+      - path: SieloApp/Resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.sielo.music
+        MARKETING_VERSION: "12.0.0"
+        CURRENT_PROJECT_VERSION: "1200"
+        INFOPLIST_FILE: SieloApp/Info.plist
+        CODE_SIGN_ENTITLEMENTS: SieloApp/Sielo.entitlements
+        SWIFT_VERSION: "5.10"
+        ENABLE_BITCODE: NO
+        TARGETED_DEVICE_FAMILY: "1"
+    dependencies:
+      - package: SieloCoreModels
+      - package: SieloCoreDatabase
+      - package: SieloCoreNetwork
+      - package: SieloCoreAudio
+      - package: SieloCoreLyrics
+      - package: SieloCoreRecommendations
+      - package: SieloCorePlaylistImport
+      - package: Firebase
+        product: FirebaseAuth
+      - package: Firebase
+        product: FirebaseFirestore
+      - package: GoogleSignIn
+        product: GoogleSignIn
+      - package: GoogleSignIn
+        product: GoogleSignInSwift
+      - package: GRDB
+        product: GRDB
+      - package: CocoaMQTT
+        product: CocoaMQTT
+      - package: Nuke
+        product: Nuke
+      - package: Nuke
+        product: NukeUI

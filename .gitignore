@@ -1,0 +1,16 @@
+# Xcode & SwiftPM
+.DS_Store
+*.xcodeproj
+*.xcworkspace
+xcuserdata/
+DerivedData/
+build/
+.build/
+.swiftpm/
+Payload/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Secrets (add locally or via GitHub Secrets)
+GoogleService-Info.plist

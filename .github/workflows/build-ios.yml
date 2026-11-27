@@ -1,0 +1,52 @@
+name: Build Sielo iOS (.ipa)
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode Project
+        run: xcodegen generate
+
+      - name: Resolve Swift Package Dependencies
+        run: xcodebuild -resolvePackageDependencies -project Sielo.xcodeproj -scheme Sielo
+
+      - name: Build Unsigned iOS App
+        run: |
+          xcodebuild \
+            -project Sielo.xcodeproj \
+            -scheme Sielo \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Package Unsigned IPA
+        run: |
+          mkdir -p Payload
+          cp -R build/Build/Products/Release-iphoneos/Sielo.app Payload/Sielo.app
+          zip -r Sielo-iOS.ipa Payload
+
+      - name: Upload Sielo-iOS.ipa Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sielo-iOS-IPA
+          path: Sielo-iOS.ipa
+          retention-days: 14
