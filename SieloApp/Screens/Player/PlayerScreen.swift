@@ -16,6 +16,7 @@ public struct PlayerScreen: View {
     @State private var lyricOffsetMs: Int64 = 0
     @State private var showTransliterated: Bool = false
     @State private var vinylAngle: Double = 0
+    @StateObject private var glowLoader = ArtworkGlowLoader()
 
     public init(playerManager: PlayerManager, dragOffset: Binding<CGFloat>, onClose: @escaping () -> Void) {
         self.playerManager = playerManager
@@ -72,7 +73,24 @@ public struct PlayerScreen: View {
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
         }
-        .background(SieloColors.obsidianBlack.ignoresSafeArea())
+        .background(
+            ZStack {
+                SieloColors.obsidianBlack
+                RadialGradient(
+                    colors: [glowLoader.glowColor.opacity(0.28), Color.clear],
+                    center: .top,
+                    startRadius: 20,
+                    endRadius: 460
+                )
+            }
+            .ignoresSafeArea()
+        )
+        .onChange(of: state.currentTrack?.thumbnailUrl) { newUrl in
+            glowLoader.update(urlString: newUrl)
+        }
+        .onAppear {
+            glowLoader.update(urlString: state.currentTrack?.thumbnailUrl)
+        }
         .offset(y: max(0, dragOffset))
         .gesture(
             DragGesture()
@@ -167,17 +185,15 @@ public struct PlayerScreen: View {
             }
             .padding(.horizontal, 24)
 
-            // Scrubber
+            // Waveform Scrubber
             VStack(spacing: 6) {
-                let dur = max(1, Double(state.durationMs))
-                Slider(
-                    value: Binding(
-                        get: { Double(state.currentPositionMs) },
-                        set: { playerManager.seekTo(Int64($0)) }
-                    ),
-                    in: 0...dur
+                WaveformProgressBar(
+                    currentMs: state.currentPositionMs,
+                    durationMs: state.durationMs,
+                    isPlaying: state.isPlaying,
+                    accentColor: glowLoader.glowColor,
+                    onSeek: { playerManager.seekTo($0) }
                 )
-                .tint(SieloColors.sand)
 
                 HStack {
                     Text(formatMs(state.currentPositionMs))

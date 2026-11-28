@@ -14,6 +14,7 @@ public struct SearchScreen: View {
     @State private var tracks: [SieloTrack] = []
     @State private var artists: [SieloArtist] = []
     @State private var recentQueries: [String] = []
+    @State private var selectedActionTrack: SieloTrack?
     @State private var isSearching = false
 
     private let filters = ["All", "Songs", "Artists"]
@@ -191,9 +192,22 @@ public struct SearchScreen: View {
                                             Text(track.formattedDuration)
                                                 .font(SieloTypography.labelSmall)
                                                 .foregroundColor(SieloColors.textMuted)
+                                            Button {
+                                                selectedActionTrack = track
+                                            } label: {
+                                                Image(systemName: "ellipsis")
+                                                    .foregroundColor(SieloColors.textSecondary)
+                                                    .padding(6)
+                                            }
+                                            .buttonStyle(.plain)
                                         }
                                     }
                                     .listRowBackground(SieloColors.oxfordBlue)
+                                    .contextMenu {
+                                        Button { container.playerManager.playNext(track) } label: { Label("Play Next", systemImage: "text.insert") }
+                                        Button { container.playerManager.appendToQueue(track) } label: { Label("Add to Queue", systemImage: "text.append") }
+                                        Button { selectedActionTrack = track } label: { Label("More Actions", systemImage: "ellipsis.circle") }
+                                    }
                                 }
                             }
                         }
@@ -203,6 +217,11 @@ public struct SearchScreen: View {
             }
         }
         .background(SieloColors.obsidianBlack.ignoresSafeArea())
+        .sheet(item: $selectedActionTrack) { track in
+            SongActionsSheet(track: track) { artistName in
+                router.push(.artistProfile(SieloArtist(id: artistName.lowercased(), name: artistName)))
+            }
+        }
         .task {
             if let list = try? await container.database.searchHistory.getAllSearchQueries() {
                 recentQueries = list.map(\.query)

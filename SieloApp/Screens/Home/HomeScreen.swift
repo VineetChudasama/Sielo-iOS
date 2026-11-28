@@ -13,8 +13,13 @@ public struct HomeScreen: View {
 
     @State private var keepListening: [SieloTrack] = []
     @State private var songsForYou: [SieloTrack] = []
+    @State private var rediscoverFavorites: [SieloTrack] = []
     @State private var similarArtists: [SieloArtist] = []
+    @State private var selectedActionTrack: SieloTrack?
+    @State private var showUpdateAlert = false
     @State private var isLoading = false
+    @StateObject private var updateManager = AppUpdateManager.shared
+    @Environment(\.openURL) private var openURL
 
     private let genres = [
         "Bollywood", "Punjabi", "Pop", "Hip Hop", "Lo-Fi",
@@ -34,6 +39,22 @@ public struct HomeScreen: View {
                         .font(SieloFont.macondo(size: 34))
                         .foregroundColor(SieloColors.cream)
                     Spacer()
+                    if let newVer = updateManager.availableVersion {
+                        Button {
+                            showUpdateAlert = true
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "arrow.down.circle.fill")
+                                Text("v\(newVer)")
+                            }
+                            .font(SieloTypography.labelSmall)
+                            .foregroundColor(SieloColors.obsidianBlack)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(SieloColors.sand)
+                            .clipShape(Capsule())
+                        }
+                    }
                     Button {
                         router.selectTab(.search)
                     } label: {
@@ -128,6 +149,52 @@ public struct HomeScreen: View {
                     }
                 }
 
+                // Your Playlists Carousel
+                if !container.playlistsRepository.playlists.isEmpty {
+                    sectionHeader("Your playlists")
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 12) {
+                            ForEach(container.playlistsRepository.playlists) { playlist in
+                                Button {
+                                    router.push(.playlistDetail(id: playlist.id, title: playlist.title))
+                                } label: {
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .fill(SieloColors.oxfordBlue)
+                                            .frame(width: 124, height: 124)
+                                            .overlay(
+                                                Image(systemName: playlist.id == UserPlaylist.downloadedCacheId ? "arrow.down.circle.fill" : "music.note.list")
+                                                    .font(.title)
+                                                    .foregroundColor(SieloColors.sand)
+                                            )
+                                        Text(playlist.title)
+                                            .font(SieloTypography.titleSmall)
+                                            .foregroundColor(SieloColors.cream)
+                                            .lineLimit(1)
+                                        Text("\(playlist.tracks.count) tracks")
+                                            .font(SieloTypography.bodySmall)
+                                            .foregroundColor(SieloColors.textSecondary)
+                                    }
+                                    .frame(width: 124)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                }
+
+                // Rediscover Your Favorites
+                if !rediscoverFavorites.isEmpty {
+                    sectionHeader("Rediscover Your Favorites")
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 14) {
+                            ForEach(rediscoverFavorites) { track in
+                                trackCard(track, queue: rediscoverFavorites)
+                            }
+                        }
+                    }
+                }
+
                 // Trending Music Genres
                 sectionHeader("Trending Music Genres")
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
@@ -160,7 +227,21 @@ public struct HomeScreen: View {
         .refreshable {
             await refreshHome()
         }
+        .sheet(item: $selectedActionTrack) { track in
+            SongActionsSheet(track: track) { artistName in
+                router.push(.artistProfile(SieloArtist(id: artistName.lowercased(), name: artistName)))
+            }
+        }
+        .alert("Update Available (v\(updateManager.availableVersion ?? ""))", isPresented: $showUpdateAlert) {
+            Button("Update in AltStore") {
+                if let url = URL(string: "altstore://") { openURL(url) }
+            }
+            Button("Later", role: .cancel) {}
+        } message: {
+            Text(updateManager.releaseNotes ?? "A newer build of Sielo iOS is ready.")
+        }
         .task {
+            await updateManager.checkForUpdates()
             if songsForYou.isEmpty {
                 await refreshHome()
             }
@@ -231,12 +312,25 @@ public struct HomeScreen: View {
                 Text(track.formattedDuration)
                     .font(SieloTypography.labelSmall)
                     .foregroundColor(SieloColors.textMuted)
+                Button {
+                    selectedActionTrack = track
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .foregroundColor(SieloColors.textSecondary)
+                        .padding(6)
+                }
+                .buttonStyle(.plain)
             }
             .padding(10)
             .background(SieloColors.oxfordBlue)
             .clipShape(RoundedRectangle(cornerRadius: 14))
         }
         .buttonStyle(.plain)
+        .contextMenu {
+            Button { container.playerManager.playNext(track) } label: { Label("Play Next", systemImage: "text.insert") }
+            Button { container.playerManager.appendToQueue(track) } label: { Label("Add to Queue", systemImage: "text.append") }
+            Button { selectedActionTrack = track } label: { Label("More Actions", systemImage: "ellipsis.circle") }
+        }
     }
 
     private func refreshHome() async {
@@ -250,6 +344,16 @@ public struct HomeScreen: View {
                 guard seen.insert(ev.songId).inserted else { return nil }
                 return SieloTrack(id: ev.songId, title: ev.songTitle, artist: ev.artistName, album: ev.albumName, thumbnailUrl: ev.thumbnailUrl)
             }.prefix(5).map { $0 }
+        }
+
+        // Rediscover Favorites (>48h unplayed)
+        if let favs = try? await container.database.favorites.getAllFavoritesList() {
+            let twoDaysAgoMs = Int64((Date().timeIntervalSince1970 - 48 * 3600) * 1000)
+            let recentIds = Set((try? await container.database.listeningHistory.getSongIdsPlayedSince(twoDaysAgoMs)) ?? [])
+            rediscoverFavorites = favs
+                .filter { !recentIds.contains($0.id) }
+                .prefix(8)
+                .map { SieloTrack(id: $0.id, title: $0.title, artist: $0.artist, thumbnailUrl: $0.thumbnailUrl) }
         }
 
         let seedArtists = container.userManager.getTopTasteArtists() + (container.userManager.currentUser?.favoriteArtists ?? [])
