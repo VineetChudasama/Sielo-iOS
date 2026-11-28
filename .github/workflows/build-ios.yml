@@ -79,19 +79,33 @@ jobs:
           {
             "name": "Sielo iOS",
             "identifier": "com.sielo.music.source",
+            "iconURL": "https://raw.githubusercontent.com/VineetChudasama/Sielo-iOS/main/SieloApp/Resources/icon.png",
+            "tintColor": "#0D1B2A",
             "apps": [
               {
                 "name": "Sielo",
                 "bundleIdentifier": "com.sielo.music",
                 "developerName": "Vineet Chudasama",
                 "subtitle": "Tactile, lossless music streaming",
+                "iconURL": "https://raw.githubusercontent.com/VineetChudasama/Sielo-iOS/main/SieloApp/Resources/icon.png",
+                "tintColor": "#D4C4A8",
                 "version": "12.0.${GITHUB_RUN_NUMBER}",
                 "versionDate": "${DATE_ISO}",
                 "versionDescription": "Automated build (${GITHUB_SHA::7})",
                 "downloadURL": "${DOWNLOAD_URL}",
                 "localizedDescription": "Tactile lossless music streaming with E2EE Listen Together, Vibe Radar, and synced lyrics.",
                 "size": ${IPA_SIZE},
-                "minOSVersion": "16.0"
+                "minOSVersion": "16.0",
+                "versions": [
+                  {
+                    "version": "12.0.${GITHUB_RUN_NUMBER}",
+                    "date": "${DATE_ISO}",
+                    "localizedDescription": "Automated build (${GITHUB_SHA::7})",
+                    "downloadURL": "${DOWNLOAD_URL}",
+                    "size": ${IPA_SIZE},
+                    "minOSVersion": "16.0"
+                  }
+                ]
               }
             ]
           }
