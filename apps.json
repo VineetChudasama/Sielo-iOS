@@ -11,20 +11,20 @@
       "subtitle": "Tactile, lossless music streaming",
       "iconURL": "https://raw.githubusercontent.com/VineetChudasama/Sielo-iOS/main/SieloApp/Resources/icon.png",
       "tintColor": "#D4C4A8",
-      "version": "12.0.0",
-      "versionDate": "2026-11-28T09:36:43Z",
-      "versionDescription": "Automated build (20bd98d)",
-      "downloadURL": "https://github.com/VineetChudasama/Sielo-iOS/releases/download/v12.0.0-5/Sielo-iOS.ipa",
+      "version": "12.0.7",
+      "versionDate": "2026-11-28T13:12:18Z",
+      "versionDescription": "Automated build (556d4a7)",
+      "downloadURL": "https://github.com/VineetChudasama/Sielo-iOS/releases/download/v12.0.0-7/Sielo-iOS.ipa",
       "localizedDescription": "Tactile lossless music streaming with E2EE Listen Together, Vibe Radar, and synced lyrics.",
-      "size": 9941674,
+      "size": 10646611,
       "minOSVersion": "16.0",
       "versions": [
         {
-          "version": "12.0.0",
-          "date": "2026-11-28T09:36:43Z",
-          "localizedDescription": "Automated build (20bd98d)",
-          "downloadURL": "https://github.com/VineetChudasama/Sielo-iOS/releases/download/v12.0.0-5/Sielo-iOS.ipa",
-          "size": 9941674,
+          "version": "12.0.7",
+          "date": "2026-11-28T13:12:18Z",
+          "localizedDescription": "Automated build (556d4a7)",
+          "downloadURL": "https://github.com/VineetChudasama/Sielo-iOS/releases/download/v12.0.0-7/Sielo-iOS.ipa",
+          "size": 10646611,
           "minOSVersion": "16.0"
         }
       ]
