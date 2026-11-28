@@ -1,0 +1,19 @@
+{
+  "name": "Sielo iOS",
+  "identifier": "com.sielo.music.source",
+  "apps": [
+    {
+      "name": "Sielo",
+      "bundleIdentifier": "com.sielo.music",
+      "developerName": "Vineet Chudasama",
+      "subtitle": "Tactile, lossless music streaming",
+      "version": "12.0.5",
+      "versionDate": "2026-11-28T09:36:43Z",
+      "versionDescription": "Automated build (20bd98d)",
+      "downloadURL": "https://github.com/VineetChudasama/Sielo-iOS/releases/download/v12.0.0-5/Sielo-iOS.ipa",
+      "localizedDescription": "Tactile lossless music streaming with E2EE Listen Together, Vibe Radar, and synced lyrics.",
+      "size": 9941674,
+      "minOSVersion": "16.0"
+    }
+  ]
+}
