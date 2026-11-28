@@ -11,7 +11,7 @@
       "subtitle": "Tactile, lossless music streaming",
       "iconURL": "https://raw.githubusercontent.com/VineetChudasama/Sielo-iOS/main/SieloApp/Resources/icon.png",
       "tintColor": "#D4C4A8",
-      "version": "12.0.5",
+      "version": "12.0.0",
       "versionDate": "2026-11-28T09:36:43Z",
       "versionDescription": "Automated build (20bd98d)",
       "downloadURL": "https://github.com/VineetChudasama/Sielo-iOS/releases/download/v12.0.0-5/Sielo-iOS.ipa",
@@ -20,7 +20,7 @@
       "minOSVersion": "16.0",
       "versions": [
         {
-          "version": "12.0.5",
+          "version": "12.0.0",
           "date": "2026-11-28T09:36:43Z",
           "localizedDescription": "Automated build (20bd98d)",
           "downloadURL": "https://github.com/VineetChudasama/Sielo-iOS/releases/download/v12.0.0-5/Sielo-iOS.ipa",
