@@ -40,6 +40,7 @@
             <key>CFBundleURLSchemes</key>
             <array>
                 <string>sielo</string>
+                <string>com.googleusercontent.apps.61989343599-oc9e56hi0qhaaps34bbt3t18ptf5s27v</string>
             </array>
         </dict>
     </array>

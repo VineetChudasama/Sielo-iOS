@@ -11,6 +11,3 @@ Payload/
 *.ipa
 *.dSYM.zip
 *.dSYM
-
-# Secrets (add locally or via GitHub Secrets)
-GoogleService-Info.plist
