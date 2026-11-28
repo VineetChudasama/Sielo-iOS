@@ -1,4 +1,5 @@
 import SwiftUI
+import GoogleSignIn
 import SieloCoreModels
 import SieloCoreNetwork
 import SieloCoreAudio
@@ -120,6 +121,7 @@ public struct SieloRootView: View {
             NewUserOnboardingScreen(userManager: userManager)
         }
         .onOpenURL { url in
+            if GIDSignIn.sharedInstance.handle(url) { return }
             router.handleDeepLink(url)
         }
         .onChange(of: router.pendingDeepLinkAction) { action in

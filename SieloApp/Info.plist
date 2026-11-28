@@ -45,14 +45,14 @@
     </array>
     <key>UIAppFonts</key>
     <array>
-        <string>Fonts/macondo_regular.ttf</string>
-        <string>Fonts/sora_regular.ttf</string>
-        <string>Fonts/sora_semibold.ttf</string>
-        <string>Fonts/sora_bold.ttf</string>
-        <string>Fonts/urbanist_regular.ttf</string>
-        <string>Fonts/urbanist_medium.ttf</string>
-        <string>Fonts/urbanist_semibold.ttf</string>
-        <string>Fonts/urbanist_bold.ttf</string>
+        <string>macondo_regular.ttf</string>
+        <string>sora_regular.ttf</string>
+        <string>sora_semibold.ttf</string>
+        <string>sora_bold.ttf</string>
+        <string>urbanist_regular.ttf</string>
+        <string>urbanist_medium.ttf</string>
+        <string>urbanist_semibold.ttf</string>
+        <string>urbanist_bold.ttf</string>
     </array>
     <key>UIUserInterfaceStyle</key>
     <string>Dark</string>

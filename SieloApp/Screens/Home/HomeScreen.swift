@@ -128,14 +128,7 @@ public struct HomeScreen: View {
                                     router.push(.artistProfile(artist))
                                 } label: {
                                     VStack(spacing: 8) {
-                                        Circle()
-                                            .fill(SieloColors.oxfordBlue)
-                                            .frame(width: 86, height: 86)
-                                            .overlay(
-                                                Text(String(artist.name.prefix(1)))
-                                                    .font(SieloTypography.headlineMedium)
-                                                    .foregroundColor(SieloColors.sand)
-                                            )
+                                        ArtistAvatarView(name: artist.name, imageUrl: artist.imageUrl, size: 86)
                                         Text(artist.name)
                                             .font(SieloTypography.labelMedium)
                                             .foregroundColor(SieloColors.cream)

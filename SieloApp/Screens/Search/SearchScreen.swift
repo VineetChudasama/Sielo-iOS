@@ -95,17 +95,24 @@ public struct SearchScreen: View {
                             .foregroundColor(SieloColors.cream)
 
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                            ForEach(categories, id: \.self) { cat in
+                            ForEach(Array(categories.enumerated()), id: \.element) { idx, cat in
                                 Button {
                                     router.push(.searchCategory(cat))
                                 } label: {
-                                    Text(cat)
-                                        .font(SieloTypography.titleSmall)
-                                        .foregroundColor(SieloColors.cream)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .padding(18)
-                                        .background(SieloColors.oxfordBlue)
-                                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                                    ZStack(alignment: .bottomTrailing) {
+                                        Text(cat)
+                                            .font(SieloTypography.titleSmall)
+                                            .foregroundColor(SieloColors.cream)
+                                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                                            .padding(16)
+                                        Image(systemName: "music.quarternote.3")
+                                            .font(.title2)
+                                            .foregroundColor(SieloColors.cream.opacity(0.25))
+                                            .padding(12)
+                                    }
+                                    .frame(height: 82)
+                                    .background(categoryGradient(index: idx))
+                                    .clipShape(RoundedRectangle(cornerRadius: 16))
                                 }
                                 .buttonStyle(.plain)
                             }
@@ -147,13 +154,15 @@ public struct SearchScreen: View {
                                         router.push(.artistProfile(artist))
                                     } label: {
                                         HStack(spacing: 12) {
-                                            Circle()
-                                                .fill(SieloColors.surfaceElevated)
-                                                .frame(width: 44, height: 44)
-                                                .overlay(Text(String(artist.name.prefix(1))).foregroundColor(SieloColors.sand))
-                                            Text(artist.name)
-                                                .font(SieloTypography.titleSmall)
-                                                .foregroundColor(SieloColors.cream)
+                                            ArtistAvatarView(name: artist.name, imageUrl: artist.imageUrl, size: 46)
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                Text(artist.name)
+                                                    .font(SieloTypography.titleSmall)
+                                                    .foregroundColor(SieloColors.cream)
+                                                Text("Artist")
+                                                    .font(SieloTypography.labelSmall)
+                                                    .foregroundColor(SieloColors.textSecondary)
+                                            }
                                         }
                                     }
                                     .listRowBackground(SieloColors.oxfordBlue)
@@ -168,6 +177,7 @@ public struct SearchScreen: View {
                                         container.playerManager.playTrack(track, queue: tracks)
                                     } label: {
                                         HStack(spacing: 12) {
+                                            TrackArtworkView(title: track.title, artist: track.artist, urlString: track.thumbnailUrl, size: 50, cornerRadius: 10)
                                             VStack(alignment: .leading, spacing: 2) {
                                                 HStack(spacing: 6) {
                                                     Text(track.title)
@@ -244,6 +254,119 @@ public struct SearchScreen: View {
         async let artistRes = InnerTubeClient.shared.searchArtists(query: trimmed)
         tracks = await searchRes.tracks
         artists = await artistRes
+    }
+    private func categoryGradient(index: Int) -> LinearGradient {
+        let palettes: [(Color, Color)] = [
+            (Color(hex: 0x3D2645), Color(hex: 0x1B263B)),
+            (Color(hex: 0x1F4E5F), Color(hex: 0x0D1B2A)),
+            (Color(hex: 0x5C3D2E), Color(hex: 0x1B263B)),
+            (Color(hex: 0x2D4059), Color(hex: 0x1B263B)),
+            (Color(hex: 0x4A2545), Color(hex: 0x1B263B)),
+            (Color(hex: 0x2B580C), Color(hex: 0x0D1B2A)),
+            (Color(hex: 0x6B2D5C), Color(hex: 0x1B263B)),
+            (Color(hex: 0x3F4E4F), Color(hex: 0x0D1B2A))
+        ]
+        let pair = palettes[index % palettes.count]
+        return LinearGradient(colors: [pair.0, pair.1], startPoint: .topLeading, endPoint: .bottomTrailing)
+    }
+}
+
+/// Reusable Artist Avatar with async Deezer/Wikipedia photo fallback.
+public struct ArtistAvatarView: View {
+    let name: String
+    let imageUrl: String?
+    let size: CGFloat
+
+    @State private var resolvedUrl: String?
+
+    public init(name: String, imageUrl: String?, size: CGFloat) {
+        self.name = name
+        self.imageUrl = imageUrl
+        self.size = size
+    }
+
+    public var body: some View {
+        let activeUrl = (resolvedUrl ?? imageUrl).flatMap(URL.init)
+        Group {
+            if let activeUrl {
+                AsyncImage(url: activeUrl) { phase in
+                    if case .success(let img) = phase {
+                        img.resizable().scaledToFill()
+                    } else {
+                        fallbackCircle
+                    }
+                }
+            } else {
+                fallbackCircle
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(Circle())
+        .overlay(Circle().stroke(SieloColors.borderGlass, lineWidth: 1))
+        .task(id: name) {
+            if imageUrl == nil || imageUrl?.isEmpty == true {
+                resolvedUrl = await ArtistMetadataResolver.shared.resolveArtistPhoto(artistName: name)
+            }
+        }
+    }
+
+    private var fallbackCircle: some View {
+        Circle()
+            .fill(SieloColors.surfaceElevated)
+            .overlay(
+                Text(String(name.prefix(1)).uppercased())
+                    .font(SieloTypography.titleMedium)
+                    .foregroundColor(SieloColors.sand)
+            )
+    }
+}
+
+/// Reusable Track Artwork with JioSaavn/iTunes/Deezer fallback.
+public struct TrackArtworkView: View {
+    let title: String
+    let artist: String
+    let urlString: String?
+    let size: CGFloat
+    let cornerRadius: CGFloat
+
+    @State private var resolvedUrl: String?
+
+    public init(title: String, artist: String, urlString: String?, size: CGFloat, cornerRadius: CGFloat = 10) {
+        self.title = title
+        self.artist = artist
+        self.urlString = urlString
+        self.size = size
+        self.cornerRadius = cornerRadius
+    }
+
+    public var body: some View {
+        let activeUrl = (resolvedUrl ?? urlString).flatMap(URL.init)
+        Group {
+            if let activeUrl {
+                AsyncImage(url: activeUrl) { phase in
+                    if case .success(let img) = phase {
+                        img.resizable().scaledToFill()
+                    } else {
+                        placeholder
+                    }
+                }
+            } else {
+                placeholder
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .task(id: "\(title)|\(artist)") {
+            if urlString == nil || urlString?.isEmpty == true {
+                resolvedUrl = await JioSaavnSongArtworkResolver.shared.resolveArtwork(title: title, artist: artist)
+            }
+        }
+    }
+
+    private var placeholder: some View {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .fill(SieloColors.surfaceElevated)
+            .overlay(Image(systemName: "music.note").foregroundColor(SieloColors.sand.opacity(0.6)))
     }
 }
 

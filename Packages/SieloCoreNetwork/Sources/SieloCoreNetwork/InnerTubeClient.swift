@@ -404,7 +404,13 @@ public actor InnerTubeClient {
         let subRuns = ((flexColumns.dropFirst().first?["musicResponsiveListItemFlexColumnRenderer"] as? [String: Any])?["text"] as? [String: Any])?["runs"] as? [[String: Any]]
         let artist = subRuns?.first?["text"] as? String ?? "Unknown Artist"
         let thumb = (((r["thumbnail"] as? [String: Any])?["musicThumbnailRenderer"] as? [String: Any])?["thumbnail"] as? [String: Any])?["thumbnails"] as? [[String: Any]]
-        let thumbUrl = thumb?.last?["url"] as? String
+        let rawThumbUrl = thumb?.last?["url"] as? String
+        let thumbUrl = rawThumbUrl.map { url -> String in
+            if url.contains("lh3.googleusercontent.com") || url.contains("yt3.ggpht.com") {
+                return url.replacingOccurrences(of: "=w\\d+-h\\d+[^\"&]*", with: "=w544-h544-l90-rj", options: .regularExpression)
+            }
+            return url
+        }
 
         return SieloTrack(id: videoId, title: title, artist: artist, thumbnailUrl: thumbUrl)
     }
