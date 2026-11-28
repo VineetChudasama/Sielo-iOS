@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import FirebaseCore
 import FirebaseAuth
 import FirebaseFirestore
 import SieloCoreModels
@@ -16,7 +17,9 @@ public final class CloudSyncManager: ObservableObject {
     private let playlistsRepository: UserPlaylistsRepository
     private let settingsRepository: SettingsRepository
     private let playerManager: PlayerManager
-    private let firestore = Firestore.firestore()
+    private var firestore: Firestore? {
+        FirebaseApp.app() != nil ? Firestore.firestore() : nil
+    }
 
     public var currentUserProvider: (() -> UserProfile?)?
     public var onProfileRestored: ((UserProfile) -> Void)?
@@ -45,20 +48,21 @@ public final class CloudSyncManager: ObservableObject {
     }
 
     private func resolveUserKey(for profile: UserProfile?) -> String? {
-        if let uid = Auth.auth().currentUser?.uid, !uid.isEmpty { return uid }
+        if FirebaseApp.app() != nil, let uid = Auth.auth().currentUser?.uid, !uid.isEmpty { return uid }
         if let id = profile?.id, !id.isEmpty { return id }
         return profile?.email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     }
 
-    private func dataCollection(for userKey: String) -> CollectionReference {
-        firestore.collection("sielo_users").document(userKey).collection("data")
+    private func dataCollection(for userKey: String) -> CollectionReference? {
+        firestore?.collection("sielo_users").document(userKey).collection("data")
     }
 
     // MARK: - Full Backup & Restore
 
     public func backupAll(profile: UserProfile) async {
-        guard profile.provider != .guest, !isRestoring, let key = resolveUserKey(for: profile) else { return }
-        let col = dataCollection(for: key)
+        guard profile.provider != .guest, !isRestoring,
+              let key = resolveUserKey(for: profile),
+              let col = dataCollection(for: key) else { return }
 
         // 1. data/profile
         let favs = (try? await database.favorites.getAllFavoritesList()) ?? []
@@ -129,11 +133,11 @@ public final class CloudSyncManager: ObservableObject {
     }
 
     public func restoreUserData(profile: UserProfile) async {
-        guard profile.provider != .guest, let key = resolveUserKey(for: profile) else { return }
+        guard profile.provider != .guest,
+              let key = resolveUserKey(for: profile),
+              let col = dataCollection(for: key) else { return }
         isRestoring = true
         defer { isRestoring = false }
-
-        let col = dataCollection(for: key)
 
         // Restore library favorites
         if let doc = try? await col.document("library").getDocument(),
@@ -171,6 +175,7 @@ public final class CloudSyncManager: ObservableObject {
     }
 
     private func backupPlayback(userKey: String) async {
+        guard let col = dataCollection(for: userKey) else { return }
         let state = playerManager.playbackState
         var payload: [String: Any] = [
             "activeDeviceId": "ios",
@@ -183,12 +188,13 @@ public final class CloudSyncManager: ObservableObject {
            let str = String(data: data, encoding: .utf8) {
             payload["currentTrackJson"] = str
         }
-        try? await dataCollection(for: userKey).document("playback").setData(payload, merge: true)
+        try? await col.document("playback").setData(payload, merge: true)
     }
 
     private func startRemotePlaybackListener(userKey: String) {
         playbackListener?.remove()
-        playbackListener = dataCollection(for: userKey).document("playback")
+        guard let col = dataCollection(for: userKey) else { return }
+        playbackListener = col.document("playback")
             .addSnapshotListener { [weak self] snapshot, _ in
                 guard let data = snapshot?.data(),
                       let activeDevice = data["activeDeviceId"] as? String,

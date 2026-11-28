@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import FirebaseCore
 import FirebaseAuth
 import FirebaseFirestore
 import SieloCoreModels
@@ -23,7 +24,12 @@ public final class UserManager: ObservableObject {
     private let playerManager: PlayerManager
     private let cloudSyncManager: CloudSyncManager
     private let playlistsRepository: UserPlaylistsRepository
-    private let firestore = Firestore.firestore()
+    private var firestore: Firestore? {
+        FirebaseApp.app() != nil ? Firestore.firestore() : nil
+    }
+    private var isFirebaseConfigured: Bool {
+        FirebaseApp.app() != nil
+    }
 
     public init(
         databaseCleaner: DatabaseCleaner,
@@ -47,14 +53,15 @@ public final class UserManager: ObservableObject {
     // MARK: - Auth Flows
 
     public func signInWithGoogle(name: String, email: String, photoUrl: String?, idToken: String?) async throws {
-        if let idToken {
+        if isFirebaseConfigured, let idToken {
             let credential = GoogleAuthProvider.credential(withIDToken: idToken, accessToken: "")
             _ = try await Auth.auth().signIn(with: credential)
         }
         let cleanEmail = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let existing = getUserByEmail(cleanEmail)
+        let uid = isFirebaseConfigured ? Auth.auth().currentUser?.uid : nil
         let profile = existing ?? UserProfile(
-            id: Auth.auth().currentUser?.uid ?? UUID().uuidString,
+            id: uid ?? UUID().uuidString,
             name: name,
             email: cleanEmail,
             photoUrl: photoUrl,
@@ -71,11 +78,12 @@ public final class UserManager: ObservableObject {
             await switchToAccount(existing)
             return
         }
-        if Auth.auth().currentUser == nil {
+        if isFirebaseConfigured && Auth.auth().currentUser == nil {
             _ = try? await Auth.auth().signInAnonymously()
         }
+        let uid = isFirebaseConfigured ? Auth.auth().currentUser?.uid : nil
         let profile = UserProfile(
-            id: Auth.auth().currentUser?.uid ?? UUID().uuidString,
+            id: uid ?? UUID().uuidString,
             name: name.isEmpty ? cleanEmail.components(separatedBy: "@").first ?? "Listener" : name,
             email: cleanEmail,
             provider: .emailPassword,
@@ -112,7 +120,9 @@ public final class UserManager: ObservableObject {
     }
 
     public func signOut() async {
-        try? Auth.auth().signOut()
+        if isFirebaseConfigured {
+            try? Auth.auth().signOut()
+        }
         try? await databaseCleaner.clearAll()
         playlistsRepository.resetToDefault()
         playerManager.resetPlayer()
@@ -124,12 +134,14 @@ public final class UserManager: ObservableObject {
     public func deleteAccount() async {
         if let user = currentUser {
             if let handle = user.username {
-                try? await firestore.collection("sielo_usernames").document(handle).delete()
+                try? await firestore?.collection("sielo_usernames").document(handle).delete()
             }
-            try? await firestore.collection("sielo_users").document(user.id).delete()
+            try? await firestore?.collection("sielo_users").document(user.id).delete()
             prefs.removeObject(forKey: "\(keyAccountPrefix)\(user.email.lowercased())")
         }
-        try? await Auth.auth().currentUser?.delete()
+        if isFirebaseConfigured {
+            try? await Auth.auth().currentUser?.delete()
+        }
         await signOut()
     }
 
@@ -155,7 +167,7 @@ public final class UserManager: ObservableObject {
             return (true, "Your current username")
         }
 
-        let doc = try? await firestore.collection("sielo_usernames").document(clean).getDocument()
+        let doc = try? await firestore?.collection("sielo_usernames").document(clean).getDocument()
         if doc?.exists == true {
             return (false, "Username is already taken")
         }
@@ -167,9 +179,9 @@ public final class UserManager: ObservableObject {
         let (ok, _) = await checkUsernameAvailability(clean)
         guard ok, var user = currentUser else { return false }
         if let old = user.username, old != clean {
-            try? await firestore.collection("sielo_usernames").document(old).delete()
+            try? await firestore?.collection("sielo_usernames").document(old).delete()
         }
-        try? await firestore.collection("sielo_usernames").document(clean).setData([
+        try? await firestore?.collection("sielo_usernames").document(clean).setData([
             "uid": user.id,
             "email": user.email,
             "updatedAt": Int64(Date().timeIntervalSince1970 * 1000)

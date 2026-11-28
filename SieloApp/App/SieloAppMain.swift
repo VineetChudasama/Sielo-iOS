@@ -23,6 +23,8 @@ struct SieloAppMain: App {
         WindowGroup {
             SieloRootView()
                 .environmentObject(container)
+                .environmentObject(container.playerManager)
+                .environmentObject(container.userManager)
                 .preferredColorScheme(.dark)
         }
     }

@@ -7,6 +7,8 @@ import SieloCoreAudio
 /// MiniPlayerIsland, drag-to-dismiss PlayerScreen, Deep Links, Auth & Onboarding sheets.
 public struct SieloRootView: View {
     @EnvironmentObject private var container: SieloContainer
+    @EnvironmentObject private var playerManager: PlayerManager
+    @EnvironmentObject private var userManager: UserManager
     @StateObject private var router = SieloRouter()
 
     @State private var showLaunchReveal = true
@@ -15,7 +17,7 @@ public struct SieloRootView: View {
     public init() {}
 
     public var body: some View {
-        let playbackState = container.playerManager.playbackState
+        let playbackState = playerManager.playbackState
 
         ZStack(alignment: .bottom) {
             SieloColors.obsidianBlack.ignoresSafeArea()
@@ -106,16 +108,16 @@ public struct SieloRootView: View {
             }
         }
         .sheet(isPresented: Binding(
-            get: { container.userManager.isAuthDialogOpen && !showLaunchReveal },
-            set: { container.userManager.isAuthDialogOpen = $0 }
+            get: { userManager.isAuthDialogOpen && !showLaunchReveal },
+            set: { userManager.isAuthDialogOpen = $0 }
         )) {
-            AuthDialogView(userManager: container.userManager)
+            AuthDialogView(userManager: userManager)
         }
         .fullScreenCover(isPresented: Binding(
-            get: { container.userManager.isOnboardingOpen && !showLaunchReveal },
-            set: { container.userManager.isOnboardingOpen = $0 }
+            get: { userManager.isOnboardingOpen && !showLaunchReveal },
+            set: { userManager.isOnboardingOpen = $0 }
         )) {
-            NewUserOnboardingScreen(userManager: container.userManager)
+            NewUserOnboardingScreen(userManager: userManager)
         }
         .onOpenURL { url in
             router.handleDeepLink(url)
@@ -126,8 +128,8 @@ public struct SieloRootView: View {
             Task { await executeDeepLink(action) }
         }
         .onAppear {
-            if container.userManager.currentUser == nil && !container.userManager.isOnboardingOpen {
-                container.userManager.isAuthDialogOpen = true
+            if userManager.currentUser == nil && !userManager.isOnboardingOpen {
+                userManager.isAuthDialogOpen = true
             }
         }
     }
